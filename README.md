@@ -48,11 +48,6 @@ Each hyperparameter search space will be defined with the help of the following 
 Here's a detailed example on how to use the methods available 
 
 ```
-# Append path of module to sys and import module
-module_path = os.path.dirname(os.getcwd())
-sys.path.append(module_path)
-```
-```
 # We generate data for our tests and global variables for all tests
 x_train, t_train, x_test, t_test = load_breast_cancer_dataset(random_state=42)
 dataset = 'Breast_Cancer_Wisconsin'
@@ -69,7 +64,7 @@ mlp.fit(x_train, t_train)
 ```
 # We set the experiment title and save the path to save the results
 experiment_title = 'BreastCancerClassification'
-results_path = os.path.join(os.path.dirname(module_path), 'Results')
+results_path = os.path.join(os.path.dirname(os.getcwd()), 'Results')
 ```
 
 #### Standard GP with EI acquisition function
@@ -92,9 +87,6 @@ GP_results = GP_tuner.tune(x_train, t_train, n_evals=nb_evals, nb_cross_validati
 GP_results.save_all_results(results_path, experiment_title, dataset,
                             train_size, mlp.score(x_test, t_test))                           
 ```
-The user should take a look at the files contained in _Code/Experiments_ for a better understanding on how to use the code. 
-
-Detailed descriptions of every hyperparameters that can be tuned for each model are available in _Code/Model.py_
 
 ### Tuning your own model
 Further documentation will be added eventually
