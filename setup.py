@@ -4,7 +4,8 @@ setup(
     name='GetTuned',
     version='0.1',
     packages=['GetTuned']
-    author='Nicolas Raymond, Alexandre Ayotte'
+    author='Nicolas Raymond, Alexandre Ayotte',
+    license='MIT',
     install_requires=[
         'astroid==2.3.3',
         'certifi==2020.4.5.1',
@@ -51,5 +52,5 @@ setup(
         'tqdm==4.45.0',
         'typed-ast==1.4.1',
         'wrapt==1.11.2',
-    ] 
+    ], 
 )
