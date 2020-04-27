@@ -12,13 +12,13 @@ import ConfigSpace as CS
 import ConfigSpace.hyperparameters as CSH
 from sklearn.model_selection import ParameterGrid
 from hyperopt import hp, fmin, rand, tpe, anneal
-from Model import HPtype
+from .Model import HPtype
 from enum import Enum, unique
 from copy import deepcopy
 from tqdm import tqdm
 from GPyOpt.methods import BayesianOptimization
-from TuningAnalyst import TuningAnalyst
-from Worker import start_hpbandster_process
+from .TuningAnalyst import TuningAnalyst
+from .Worker import start_hpbandster_process
 
 method_list = ['grid_search', 'random_search', 'gaussian_process', 'tpe', 'annealing', 'hyperband', 'BOHB']
 domain_type_list = ['ContinuousDomain', 'DiscreteDomain', 'CategoricalDomain']
