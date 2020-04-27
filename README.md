@@ -16,6 +16,9 @@ They will be automatically installed with the package.
 
 ## Usage
 
+### General framework
+A flexible framework will be provided eventually to facilitate the usage of the package and enhance its understanding.
+
 ### Models available
 The actual implementation allows to tune the hyperparameters of 4 different classification models
 
@@ -27,7 +30,7 @@ The actual implementation allows to tune the hyperparameters of 4 different clas
 ```
 
 ### Tuning methods
-The tuning can be done with the following hyperparameter optimization methods :
+The tuning can be done via a HPtuner object with one of the following hyperparameter optimization methods :
 ```
 - grid_search
 - random_search      # 2 possible variants : (GP, GP_MCMC), 2 possible acquisition functions : (EI, MPI)
@@ -37,6 +40,9 @@ The tuning can be done with the following hyperparameter optimization methods :
 - hyperband
 - BOHB
 ```
+
+### Practice data available
+Multiple methods to retrieve dataset to test tuning methods for scikit-learn models (MLP, SVM) and pytorch models (CnnVanilla, Resnet) are provided by the DataManager. See __DataManager.py__ to be aware of all methods available.
 
 ### Example of usage
 Each hyperparameter search space will be defined with the help of the following domain objects
@@ -49,7 +55,7 @@ Here's a detailed example on how to use the methods available
 
 ```
 # We generate data for our tests and global variables for all tests
-x_train, t_train, x_test, t_test = load_breast_cancer_dataset(random_state=42)
+x_train, t_train, x_test, t_test = DataManager.load_breast_cancer_dataset(random_state=42)
 dataset = 'Breast_Cancer_Wisconsin'
 train_size = len(x_train)
 nb_cross_validation = 4
