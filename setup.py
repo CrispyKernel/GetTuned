@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='GetTuned',
     version='0.1',
-    packages=['GetTuned']
+    packages=['GetTuned'],
     author='Nicolas Raymond, Alexandre Ayotte',
     license='MIT',
     install_requires=[
@@ -52,5 +52,7 @@ setup(
         'tqdm==4.45.0',
         'typed-ast==1.4.1',
         'wrapt==1.11.2',
-    ], 
+    ],
+    description='Collection of multiple hyperparameter optimization methods for classification tasks',
+
 )
