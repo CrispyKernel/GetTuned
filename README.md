@@ -1,18 +1,15 @@
 # GetTuned
 Collection of multiple hyperparameter optimization methods for classification tasks
 
-## Requirements
+## Installation
 
-The present package is written in **Python 3.7**. In order to run at full capacity, the user should have a **Nvidia GPU** with **CUDA 10.1** installed. Also, the following HPO packages are required to execute our test.
+The present package is written in **Python 3.7**. In order to run at full capacity, the user should have a **Nvidia GPU** with **CUDA 10.1** installed.
+
+The user may create a new virtual environment and simply type the following line in his console in order to get the package.
 
 ```
--GPyOpt 
--HyperOpt 
--HpBandSter 
--ConfigSpace
-```
-
-They will be automatically installed with the package.
+ pip install git+https://github.com/CrispyKernel/GetTuned.git
+ ```
 
 ## Usage
 
@@ -96,14 +93,6 @@ GP_results.save_all_results(results_path, experiment_title, dataset,
 
 ### Tuning your own model
 Further documentation will be added eventually
-
-
-## Installation
-Simple type the following line in your console:
-
-```
- pip install git+https://github.com/CrispyKernel/GetTuned.git#egg="GetTuned"
- ```
 
 ## Results from this implementation
 
