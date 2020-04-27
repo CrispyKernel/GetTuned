@@ -99,7 +99,11 @@ Further documentation will be added eventually
 
 
 ## Installation
-Further documentation will be added eventually
+Simple type the following line in your console:
+
+```
+ pip install git+https://github.com/CrispyKernel/GetTuned.git#egg="GetTuned"
+ ```
 
 ## Results from this implementation
 
