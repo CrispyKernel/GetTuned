@@ -17,7 +17,7 @@
 
 import torch
 import torch.nn.functional as F
-import Model
+
 
 
 class ResModuleV1(torch.nn.Module):
@@ -35,6 +35,7 @@ class ResModuleV1(torch.nn.Module):
         :param subsample: If we want to subsample the image.
         """
 
+        from .Model import Cnn
         torch.nn.Module.__init__(self)
 
         if activation == "relu":
@@ -56,11 +57,11 @@ class ResModuleV1(torch.nn.Module):
         fmap_out = 2*fmap_in if twice else fmap_in
 
         self.conv1 = torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=kernel, stride=(2 if subsample else 1),
-                                     padding=Model.Cnn.pad_size(kernel, 1), bias=bias)
+                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
         self.bn1 = torch.nn.BatchNorm2d(fmap_out)
 
         self.conv2 = torch.nn.Conv2d(fmap_out, fmap_out, kernel_size=kernel, stride=1,
-                                     padding=Model.Cnn.pad_size(kernel, 1), bias=bias)
+                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
         self.bn2 = torch.nn.BatchNorm2d(fmap_out)
 
         # If subsample is True
@@ -105,7 +106,7 @@ class ResModuleV2(torch.nn.Module):
         :param twice: If we want twice more features at the output
         :param subsample: If we want to subsample the image.
         """
-
+        from .Model import Cnn
         torch.nn.Module.__init__(self)
 
         if activation == "relu":
@@ -129,12 +130,12 @@ class ResModuleV2(torch.nn.Module):
         self.bn1 = torch.nn.BatchNorm2d(fmap_in)
 
         self.conv1 = torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=kernel, stride=(2 if subsample else 1),
-                                     padding=Model.Cnn.pad_size(kernel, 1), bias=bias)
+                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
 
         self.bn2 = torch.nn.BatchNorm2d(fmap_out)
 
         self.conv2 = torch.nn.Conv2d(fmap_out, fmap_out, kernel_size=kernel, stride=1,
-                                     padding=Model.Cnn.pad_size(kernel, 1), bias=bias)
+                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
 
         # If subsample is True
         self.subsample = subsample

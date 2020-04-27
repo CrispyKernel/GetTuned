@@ -10,13 +10,13 @@
     @Description:       This program generates models of different types to use for our classification problems.
 """
 
-import DataManager as Dm
+from .DataManager import create_dataloader, validation_split, dataset_to_loader
+from .Module import Swish, Mish, ResModuleV1, ResModuleV2
 import numpy as np
 import sklearn.svm as svm
 import sklearn.neural_network as nn
 import matplotlib.pyplot as plt
 import torch
-import Module as Module
 import time
 from sklearn.model_selection import train_test_split
 from enum import Enum, unique
@@ -150,7 +150,7 @@ class Model:
                 res = np.append(res, self.score(X=x_valid, t=y_valid))
 
             elif not(dtset is None):
-                d_train, d_valid = Dm.validation_split(dtset=dtset, valid_size=valid_size)
+                d_train, d_valid = validation_split(dtset=dtset, valid_size=valid_size)
                 self.fit(dtset=d_train)
                 res = np.append(res, self.score(dtset=d_valid))
 
@@ -629,9 +629,9 @@ class Cnn(Model, torch.nn.Module):
         elif self.hparams["activation"] == "sigmoid":
             return torch.nn.Sigmoid()
         elif self.hparams["activation"] == "swish":
-            return Module.Swish()
+            return Swish()
         elif self.hparams["activation"] == "mish":
-            return Module.Mish()
+            return Mish()
         else:
             raise Exception("No such activation has this name: {}".format(self.hparams["activation"]))
 
@@ -741,16 +741,16 @@ class Cnn(Model, torch.nn.Module):
 
         if dtset is None:
             # x_train, t_train, x_valid, t_valid
-            x_t, t_t, x_v, t_v = Dm.validation_split(features=X_train, labels=t_train, valid_size=self.valid_size)
+            x_t, t_t, x_v, t_v = validation_split(features=X_train, labels=t_train, valid_size=self.valid_size)
 
-            train_loader = Dm.create_dataloader(x_t, t_t, self.hparams["b_size"], shuffle=True)
-            valid_loader = Dm.create_dataloader(x_v, t_v, self.hparams["b_size"], shuffle=False)
+            train_loader = create_dataloader(x_t, t_t, self.hparams["b_size"], shuffle=True)
+            valid_loader = create_dataloader(x_v, t_v, self.hparams["b_size"], shuffle=False)
 
         else:
-            train_set, valid_set = Dm.validation_split(dtset=dtset, valid_size=self.valid_size)
+            train_set, valid_set = validation_split(dtset=dtset, valid_size=self.valid_size)
 
-            train_loader = Dm.dataset_to_loader(train_set, self.hparams["b_size"], shuffle=True)
-            valid_loader = Dm.dataset_to_loader(valid_set, self.hparams["b_size"], shuffle=False)
+            train_loader = dataset_to_loader(train_set, self.hparams["b_size"], shuffle=True)
+            valid_loader = dataset_to_loader(valid_set, self.hparams["b_size"], shuffle=False)
 
         return train_loader, valid_loader
 
@@ -892,9 +892,9 @@ class Cnn(Model, torch.nn.Module):
                 raise Exception("Features or labels missing. X is None: {}, t is None: {}, dtset is None: {}".format(
                     X is None, t is None, dtset is None))
             else:
-                test_loader = Dm.create_dataloader(X, t, self.hparams["b_size"], shuffle=False)
+                test_loader = create_dataloader(X, t, self.hparams["b_size"], shuffle=False)
         else:
-            test_loader = Dm.dataset_to_loader(dtset, self.hparams["b_size"], shuffle=False)
+            test_loader = dataset_to_loader(dtset, self.hparams["b_size"], shuffle=False)
 
         self.eval()
 
@@ -1182,9 +1182,9 @@ class ResNet(Cnn):
 
         # We select the right resnet module according to the given version
         if self.hparams['version'] == 1:
-            res_module = Module.ResModuleV1
+            res_module = ResModuleV1
         else:
-            res_module = Module.ResModuleV2
+            res_module = ResModuleV2
 
         # Number of features that enter in the first residual module
         f_in = conv[0]
