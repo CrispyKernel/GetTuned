@@ -45,7 +45,7 @@ setup(
         'sklearn==0.0',
         'statsmodels==0.11.1',
         'torch==1.5.0',
-        'torchvision==0.6.0a0+82fd1c8',
+        'torchvision==0.6.0',
         'tqdm==4.45.0',
         'typed-ast==1.4.1',
         'wrapt==1.11.2',
