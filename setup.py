@@ -51,5 +51,7 @@ setup(
         'wrapt==1.11.2',
     ],
     description='Collection of multiple hyperparameter optimization methods for classification tasks',
-
+    keywords='deeplearning machine learning neural network hyperparameter optimization svm mlp cnn gaussian processes tree of parzen \
+        random grid search hyperband bohb GPy GPyOpt hpbandster hyperopt automl automated',
 )
+
