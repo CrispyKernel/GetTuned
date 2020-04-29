@@ -45,8 +45,6 @@ A flexible framework for MLP and SVM models has been be provided to facilitate t
 
 Another framework will be eventually released for CnnVanilla and ResNet
 
-A flexible framework will be provided eventually to facilitate the usage of the package and enhance its understanding.
-
 ### Tuning your own model
 Further documentation will be added eventually
 
