@@ -20,7 +20,7 @@ import torch
 import time
 from sklearn.model_selection import train_test_split
 from enum import Enum, unique
-
+from tqdm import tqdm
 
 @unique
 class HPtype(Enum):
