@@ -29,7 +29,7 @@ from GetTuned import DataGenerator, load_digits_dataset, load_breast_cancer_data
 save_enabled = True
 display_results = False
 saving_path  =  os.path.join(os.path.dirname(os.getcwd()), 'Results')
-experiment_title = '' 
+experiment_title = '' # (**Optional** -> Will be used as a directory within Results/)
 name_of_dataset = ''  # (**Optional** -> Will only be written in summary.txt)  
 
 
@@ -62,7 +62,7 @@ valid_size = 0.2
 
 """
 
-method = 'random_search'
+method = 'annealing'
 
 
 ## **OPTIONAL PARAMETER FOR GAUSSIAN PROCESS METHOD** ##----------------------//
@@ -97,18 +97,21 @@ tuning_analyst = hp_tuner.tune(X=x_train, t=t_train, nb_cross_validation=nb_cros
 final_accuracy_score = model.score(X=x_test, t=t_test)
 
 if save_enabled:
-    tuning_history.save_all_results(path=saving_path, experiment_title=experiment_title, dataset_name=name_of_dataset,
+    tuning_analyst.save_all_results(path=saving_path, experiment_title=experiment_title, dataset_name=name_of_dataset,
                                     training_size=len(x_train), test_accuracy=final_accuracy_score)
 
-print("Tuning completed!!", "\n\n")
+print("\n\n*******************************")
+print("\nTuning completed!!", "\n\n")
 
 if display_results:
     
     print("Best hyper-parameters found : %s \n" % str(tuning_analyst.best_hyperparameters))
     print("Test accuracy : %g \n\n" % final_accuracy_score)
-    print("See tuning_summary.txt for more details")
+    print("See tuning_summary.txt for more details \n")
     tuning_analyst.plot_accuracy_history(best_accuracy=False)
     tuning_analyst.plot_accuracy_history(best_accuracy=True)
+
+print("*******************************\n\n")
 
 
 
