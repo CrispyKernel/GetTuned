@@ -8,7 +8,6 @@ setup(
     license='MIT',
     install_requires=[
         'astroid==2.3.3',
-        'certifi==2020.4.5.1',
         'cloudpickle==1.3.0',
         'ConfigSpace==0.4.12',
         'cycler==0.10.0',
