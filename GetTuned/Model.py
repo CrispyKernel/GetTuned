@@ -522,7 +522,7 @@ class Cnn(Model, torch.nn.Module):
 
         self.drop = torch.nn.Dropout(p=self.hparams["dropout"])
         self.soft = torch.nn.LogSoftmax(dim=-1)
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.NLLLoss()
 
     @staticmethod
     def conv_out_size(in_size, conv_size, conv_type, pool):
@@ -1231,14 +1231,18 @@ class ResNet(Cnn):
         else:
             # First fully connected layer
             fc_list.extend([torch.nn.Linear(self.num_flat_features, fc_nodes[0]),
-                            self.get_activation_function(),
-                            self.drop])
+                            self.get_activation_function()])
+
+            if self.hparams['dropout'] > 0:
+                fc_list.extend([self.drop])
 
             # All others hidden layers
             for it in range(1, len(fc_nodes)):
                 fc_list.extend([torch.nn.Linear(fc_nodes[it - 1], fc_nodes[it]),
-                                self.get_activation_function(),
-                                self.drop])
+                                self.get_activation_function()])
+
+                if self.hparams['dropout'] > 0:
+                    fc_list.extend([self.drop])
 
             num_last_nodes = fc_nodes[-1]
 
