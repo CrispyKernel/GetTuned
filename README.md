@@ -41,7 +41,9 @@ Multiple methods to retrieve dataset to test tuning methods for scikit-learn mod
 ### General framework
 A flexible framework for MLP and SVM models has been be provided to facilitate the usage of the package and enhance its understanding.
 
+```html
 <font color="red">The user should read it since it provides a great way to experience the package</font>
+```
 
 Another framework will be eventually released for CnnVanilla and ResNet
 
