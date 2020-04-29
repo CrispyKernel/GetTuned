@@ -1166,9 +1166,12 @@ class ResNet(Cnn):
         #                                   CONVOLUTIONAL PART
         # ------------------------------------------------------------------------------------------
         # First convolutional layer
-        conv_list = [torch.nn.Conv2d(input_dim[2], conv[0], conv[1], padding=self.pad_size(conv[1], conv[2])),
-                     torch.nn.BatchNorm2d(conv[0]),
-                     self.get_activation_function()]
+        conv_list = [torch.nn.Conv2d(input_dim[2], conv[0], conv[1], padding=self.pad_size(conv[1], conv[2]))]
+
+        # No batch norm and activation if its a pre-activation ResNet
+        if self.hparams['version'] == 1:
+            conv_list.extend([torch.nn.BatchNorm2d(conv[0]),
+                              self.get_activation_function()])
 
         if pool1[0] != 0:
             conv_list.extend([self.build_pooling_layer(pool1)])
@@ -1194,14 +1197,18 @@ class ResNet(Cnn):
             conv_list.extend([res_module(f_in, res_config[it, 1], self.hparams["activation"],
                                          twice=(it != 0), subsample=(it != 0))])
 
+            subsample = False
+
             # Update features maps information
             if it > 0:
                 f_in *= 2
                 size = size / 2
+                if self.hparams['version'] == 2:
+                    subsample = True
 
             for _ in range(res_config[it, 0] - 1):
                 conv_list.extend([res_module(f_in, res_config[it, 1], self.hparams["activation"],
-                                             twice=False, subsample=False)])
+                                             twice=False, subsample=subsample)])
 
         if pool2[0] != 0:
             conv_list.extend([self.build_pooling_layer(pool2)])
