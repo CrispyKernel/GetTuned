@@ -662,7 +662,7 @@ class Cnn(Model, torch.nn.Module):
 
         if type(m) == torch.nn.Linear:
             torch.nn.init.xavier_normal_(m.weight)
-            torch.nn.init.zeros_(m.weight)
+            torch.nn.init.zeros_(m.bias)
 
         elif type(m) == torch.nn.Conv2d:
 
