@@ -819,63 +819,6 @@ class Cnn(Model, torch.nn.Module):
 
         with tqdm(total=self.num_epoch) as t:
             for epoch in range(self.num_epoch):
-                """
-                sum_loss = 0.0
-                it = 0
-
-                # ------------------------------------------------------------------------------------------
-                #                                       TRAINING PART
-                # ------------------------------------------------------------------------------------------
-                for step, data in enumerate(train_loader, 0):
-                    features, labels = data[0].to(self.device_), data[1].to(self.device_)
-
-                    optimizer.zero_grad()
-
-                    # training step
-                    pred = self(features)
-                    loss = self.criterion(pred, labels)
-                    loss.backward()
-                    optimizer.step()
-
-                    # Save the loss
-                    sum_loss += loss
-                    it += 1
-
-                current_accuracy = self.accuracy(dt_loader=valid_loader)
-
-                if verbose:
-                    end = time.time()
-                    print(
-                        "\n epoch: {:d}, Execution time: {:.2f}, average_loss: {:.4f}, validation_accuracy: {:.2f}%,"
-                          " best accuracy: {:.2f}%, best epoch {:d}:".format
-                        (epoch + 1, end - begin, sum_loss / it, current_accuracy*100, best_accuracy*100, best_epoch + 1)
-                    )
-                    begin = time.time()
-
-                # ------------------------------------------------------------------------------------------
-                #                                   EARLY STOPPING PART
-                # ------------------------------------------------------------------------------------------
-                if current_accuracy - best_accuracy >= self.tol:
-                    best_accuracy = current_accuracy
-                    best_epoch = epoch
-                    num_epoch_no_change = 0
-
-                    # We make a save of the model at his best epoch
-                    self.save_checkpoint(epoch, sum_loss / it, current_accuracy)
-
-                elif num_epoch_no_change < self.num_stop_epoch - 1:
-                    num_epoch_no_change += 1
-
-                elif lr_decay_step < self.num_lr_decay:
-                    lr_decay_step += 1
-                    learning_rate /= self.hparams["lr_decay_rate"]
-                    optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=self.hparams["alpha"],
-                                                 eps=self.hparams["eps"], amsgrad=False)
-                    num_epoch_no_change = 0
-
-                else:
-                    break
-                """
                 # ------------------------------------------------------------------------------------------
                 #                                       TRAINING PART
                 # ------------------------------------------------------------------------------------------
