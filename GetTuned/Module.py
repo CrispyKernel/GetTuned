@@ -19,7 +19,6 @@ import torch
 import torch.nn.functional as F
 
 
-
 class ResModuleV1(torch.nn.Module):
     def __init__(self, fmap_in, kernel, activation, bias=False, twice=False, subsample=False):
 
@@ -39,30 +38,34 @@ class ResModuleV1(torch.nn.Module):
         torch.nn.Module.__init__(self)
 
         if activation == "relu":
-            self.activation1 = torch.nn.ReLU()
+            act = torch.nn.ReLU()
         elif activation == "preLu":
-            self.activation1 = torch.nn.PReLU()
+            act = torch.nn.PReLU()
         elif activation == "elu":
-            self.activation1 = torch.nn.ELU()
+            act = torch.nn.ELU()
         elif activation == "sigmoide":
-            self.activation1 = torch.nn.Sigmoid()
+            act = torch.nn.Sigmoid()
         elif activation == "swish":
-            self.activation1 = Swish()
+            act = Swish()
         elif activation == "mish":
-            self.activation1 = Mish()
-
-        self.activation2 = self.activation1  # Do we need a deep copy?
+            act = Mish()
+        else:
+            act = None
 
         # Build layer
         fmap_out = 2*fmap_in if twice else fmap_in
 
-        self.conv1 = torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=kernel, stride=(2 if subsample else 1),
-                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
-        self.bn1 = torch.nn.BatchNorm2d(fmap_out)
+        self.residual_layer = torch.nn.Sequential(
+            torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=kernel, stride=(2 if subsample else 1),
+                            padding=Cnn.pad_size(kernel, 1), bias=bias),
+            torch.nn.BatchNorm2d(fmap_out),
+            act,
+            torch.nn.Conv2d(fmap_out, fmap_out, kernel_size=kernel, stride=1,
+                            padding=Cnn.pad_size(kernel, 1), bias=bias),
+            torch.nn.BatchNorm2d(fmap_out)
+        )
 
-        self.conv2 = torch.nn.Conv2d(fmap_out, fmap_out, kernel_size=kernel, stride=1,
-                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
-        self.bn2 = torch.nn.BatchNorm2d(fmap_out)
+        self.activation2 = act
 
         # If subsample is True
         self.subsample = subsample
@@ -77,11 +80,7 @@ class ResModuleV1(torch.nn.Module):
         :return: Output tensor of the residual block
         """
 
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.activation1(out)
-        out = self.conv2(out)
-        out = self.bn2(out)
+        out = self.residual_layer(x)
 
         if self.subsample:
             avg_x = self.avg_pool(x)
@@ -110,36 +109,39 @@ class ResModuleV2(torch.nn.Module):
         torch.nn.Module.__init__(self)
 
         if activation == "relu":
-            self.activation1 = torch.nn.ReLU()
+            act = torch.nn.ReLU()
         elif activation == "preLu":
-            self.activation1 = torch.nn.PReLU()
+            act = torch.nn.PReLU()
         elif activation == "elu":
-            self.activation1 = torch.nn.ELU()
+            act = torch.nn.ELU()
         elif activation == "sigmoide":
-            self.activation1 = torch.nn.Sigmoid()
+            act = torch.nn.Sigmoid()
         elif activation == "swish":
-            self.activation1 = Swish()
+            act = Swish()
         elif activation == "mish":
-            self.activation1 = Mish()
-
-        self.activation2 = self.activation1  # Do we need a deep copy?
+            act = Mish()
+        else:
+            act = None
 
         # Build layer
         fmap_out = 2*fmap_in if twice else fmap_in
 
         self.bn1 = torch.nn.BatchNorm2d(fmap_in)
+        self.activation1 = act
 
-        self.conv1 = torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=kernel, stride=(2 if subsample else 1),
-                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
-
-        self.bn2 = torch.nn.BatchNorm2d(fmap_out)
-
-        self.conv2 = torch.nn.Conv2d(fmap_out, fmap_out, kernel_size=kernel, stride=1,
-                                     padding=Cnn.pad_size(kernel, 1), bias=bias)
+        self.residual_layer = torch.nn.Sequential(
+            torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=kernel, stride=(2 if subsample else 1),
+                            padding=Cnn.pad_size(kernel, 1), bias=bias),
+            torch.nn.BatchNorm2d(fmap_out),
+            act,
+            torch.nn.Conv2d(fmap_out, fmap_out, kernel_size=kernel, stride=1,
+                            padding=Cnn.pad_size(kernel, 1), bias=bias)
+        )
 
         # If subsample is True
         self.subsample = subsample
-        self.avg_pool = torch.nn.AvgPool2d(kernel_size=1, stride=2)
+        if subsample:
+            self.sub_conv = torch.nn.Conv2d(fmap_in, fmap_out, kernel_size=1, stride=2, bias=bias)
 
     def forward(self, x):
 
@@ -152,16 +154,13 @@ class ResModuleV2(torch.nn.Module):
 
         out = self.bn1(x)
         out = self.activation1(out)
-        out = self.conv1(out)
-        out = self.bn2(out)
-        out = self.activation2(out)
-        out = self.conv2(out)
 
         if self.subsample:
-            avg_x = self.avg_pool(x)
-            x = torch.cat((avg_x, torch.zeros_like(avg_x)), dim=1)
+            shortcut = self.sub_conv(out)
+        else:
+            shortcut = x
 
-        out = out + x
+        out = self.residual_layer(out) + shortcut
 
         return out
 

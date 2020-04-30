@@ -20,7 +20,7 @@ import torch
 import time
 from sklearn.model_selection import train_test_split
 from enum import Enum, unique
-
+from tqdm import tqdm
 
 @unique
 class HPtype(Enum):
@@ -522,7 +522,7 @@ class Cnn(Model, torch.nn.Module):
 
         self.drop = torch.nn.Dropout(p=self.hparams["dropout"])
         self.soft = torch.nn.LogSoftmax(dim=-1)
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.NLLLoss()
 
     @staticmethod
     def conv_out_size(in_size, conv_size, conv_type, pool):
@@ -662,7 +662,7 @@ class Cnn(Model, torch.nn.Module):
 
         if type(m) == torch.nn.Linear:
             torch.nn.init.xavier_normal_(m.weight)
-            torch.nn.init.zeros_(m.weight)
+            torch.nn.init.zeros_(m.bias)
 
         elif type(m) == torch.nn.Conv2d:
 
@@ -754,6 +754,35 @@ class Cnn(Model, torch.nn.Module):
 
         return train_loader, valid_loader
 
+    def standard_epoch(self, train_loader, optimizer):
+        """
+        Make a standard training epoch
+
+        :param train_loader: A torch data_loader that contain the features and the labels for training.
+        :param optimizer: The torch optimizer that will used to train the model.
+        :return: The average training loss
+        """
+
+        sum_loss = 0
+        it = 0
+
+        for step, data in enumerate(train_loader, 0):
+            features, labels = data[0].to(self.device_), data[1].to(self.device_)
+
+            optimizer.zero_grad()
+
+            # training step
+            pred = self(features)
+            loss = self.criterion(pred, labels)
+            loss.backward()
+            optimizer.step()
+
+            # Save the loss
+            sum_loss += loss
+            it += 1
+
+        return sum_loss.item() / it
+
     def fit(self, X_train=None, t_train=None, dtset=None, verbose=False, gpu=True):
 
         """
@@ -770,6 +799,8 @@ class Cnn(Model, torch.nn.Module):
 
         # Indicator for early stopping
         best_accuracy = 0
+        best_loss = float("inf")
+        last_saved_loss = float("inf")
         best_epoch = -1
         num_epoch_no_change = 0
         lr_decay_step = 0
@@ -785,65 +816,54 @@ class Cnn(Model, torch.nn.Module):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=self.hparams["alpha"],
                                      eps=self.hparams["eps"], amsgrad=False)
-        begin = time.time()
 
-        for epoch in range(self.num_epoch):
-            sum_loss = 0.0
-            it = 0
+        with tqdm(total=self.num_epoch) as t:
+            for epoch in range(self.num_epoch):
+                # ------------------------------------------------------------------------------------------
+                #                                       TRAINING PART
+                # ------------------------------------------------------------------------------------------
 
-            # ------------------------------------------------------------------------------------------
-            #                                       TRAINING PART
-            # ------------------------------------------------------------------------------------------
-            for step, data in enumerate(train_loader, 0):
-                features, labels = data[0].to(self.device_), data[1].to(self.device_)
+                training_loss = self.standard_epoch(train_loader, optimizer)
+                current_accuracy = self.accuracy(dt_loader=valid_loader)
 
-                optimizer.zero_grad()
+                # ------------------------------------------------------------------------------------------
+                #                                   EARLY STOPPING PART
+                # ------------------------------------------------------------------------------------------
+                if training_loss < last_saved_loss and current_accuracy >= best_accuracy:
+                    self.save_checkpoint(epoch, training_loss, current_accuracy)
+                    best_accuracy = current_accuracy
+                    last_saved_loss = training_loss
 
-                # training step
-                pred = self(features)
-                loss = self.criterion(pred, labels)
-                loss.backward()
-                optimizer.step()
+                if self.tol < 1 - (training_loss / best_loss):
+                    best_loss = training_loss
+                    best_epoch = epoch
+                    num_epoch_no_change = 0
 
-                # Save the loss
-                sum_loss += loss
-                it += 1
+                elif num_epoch_no_change < self.num_stop_epoch - 1:
+                    num_epoch_no_change += 1
 
-            current_accuracy = self.accuracy(dt_loader=valid_loader)
+                # Learning rate decay step
+                elif lr_decay_step < self.num_lr_decay:
 
-            if verbose:
-                end = time.time()
-                print("\n epoch: {:d}, Execution time: {:.2f}, average_loss: {:.4f}, validation_accuracy: {:.2f}%,"
-                      " best accuracy: {:.2f}%, best epoch {:d}:".format
-                      (epoch + 1, end - begin, sum_loss / it, current_accuracy*100, best_accuracy*100, best_epoch + 1))
-                begin = time.time()
+                    # We update the learning rate and restart the optimizer
+                    learning_rate /= self.hparams["lr_decay_rate"]
+                    optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate,
+                                                 weight_decay=self.hparams["alpha"],
+                                                 eps=self.hparams["eps"], amsgrad=False)
+                    lr_decay_step += 1
+                    num_epoch_no_change = 0
 
-            # ------------------------------------------------------------------------------------------
-            #                                   EARLY STOPPING PART
-            # ------------------------------------------------------------------------------------------
-            if current_accuracy - best_accuracy >= self.tol:
-                best_accuracy = current_accuracy
-                best_epoch = epoch
-                num_epoch_no_change = 0
+                else:
+                    break
 
-                # We make a save of the model at his best epoch
-                self.save_checkpoint(epoch, sum_loss / it, current_accuracy)
-
-            elif num_epoch_no_change < self.num_stop_epoch - 1:
-                num_epoch_no_change += 1
-
-            elif lr_decay_step < self.num_lr_decay:
-                lr_decay_step += 1
-                learning_rate /= self.hparams["lr_decay_rate"]
-                optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=self.hparams["alpha"],
-                                             eps=self.hparams["eps"], amsgrad=False)
-                num_epoch_no_change = 0
-
-            else:
-                break
-
-        # We restore the weight of the model at his best epoch
-        self.restore()
+                if verbose:
+                    t.postfix = "avg loss: {:.4f}, validation: {:.2f}%, best accuracy: {:.2f}%, " \
+                                "best epoch: {}, learning rate: {:.8f}".format(
+                                 training_loss, current_accuracy * 100, best_accuracy * 100, best_epoch + 1,
+                                 learning_rate)
+                t.update()
+            # We restore the weight of the model at his best epoch
+            self.restore()
 
     def predict(self, X):
 
@@ -1166,9 +1186,12 @@ class ResNet(Cnn):
         #                                   CONVOLUTIONAL PART
         # ------------------------------------------------------------------------------------------
         # First convolutional layer
-        conv_list = [torch.nn.Conv2d(input_dim[2], conv[0], conv[1], padding=self.pad_size(conv[1], conv[2])),
-                     torch.nn.BatchNorm2d(conv[0]),
-                     self.get_activation_function()]
+        conv_list = [torch.nn.Conv2d(input_dim[2], conv[0], conv[1], padding=self.pad_size(conv[1], conv[2]))]
+
+        # No batch norm and activation if its a pre-activation ResNet
+        if self.hparams['version'] == 1:
+            conv_list.extend([torch.nn.BatchNorm2d(conv[0]),
+                              self.get_activation_function()])
 
         if pool1[0] != 0:
             conv_list.extend([self.build_pooling_layer(pool1)])
@@ -1194,14 +1217,18 @@ class ResNet(Cnn):
             conv_list.extend([res_module(f_in, res_config[it, 1], self.hparams["activation"],
                                          twice=(it != 0), subsample=(it != 0))])
 
+            subsample = False
+
             # Update features maps information
             if it > 0:
                 f_in *= 2
                 size = size / 2
+                if self.hparams['version'] == 2:
+                    subsample = True
 
             for _ in range(res_config[it, 0] - 1):
                 conv_list.extend([res_module(f_in, res_config[it, 1], self.hparams["activation"],
-                                             twice=False, subsample=False)])
+                                             twice=False, subsample=subsample)])
 
         if pool2[0] != 0:
             conv_list.extend([self.build_pooling_layer(pool2)])
@@ -1224,14 +1251,18 @@ class ResNet(Cnn):
         else:
             # First fully connected layer
             fc_list.extend([torch.nn.Linear(self.num_flat_features, fc_nodes[0]),
-                            self.get_activation_function(),
-                            self.drop])
+                            self.get_activation_function()])
+
+            if self.hparams['dropout'] > 0:
+                fc_list.extend([self.drop])
 
             # All others hidden layers
             for it in range(1, len(fc_nodes)):
                 fc_list.extend([torch.nn.Linear(fc_nodes[it - 1], fc_nodes[it]),
-                                self.get_activation_function(),
-                                self.drop])
+                                self.get_activation_function()])
+
+                if self.hparams['dropout'] > 0:
+                    fc_list.extend([self.drop])
 
             num_last_nodes = fc_nodes[-1]
 
