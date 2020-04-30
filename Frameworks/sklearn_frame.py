@@ -21,7 +21,7 @@ from GetTuned import DiscreteDomain, ContinuousDomain
 # Importation of helpful available functions from DataManager module
 # to generate data to practice hyperparameter tuning with GetTuned
 from GetTuned import DataGenerator, load_digits_dataset, load_breast_cancer_dataset, \
-                     load_forest_covertypes_dataset, load_forest_covertypes_dataset, plot_data
+                     load_forest_covertypes_dataset, load_forest_covertypes_dataset, load_iris_dataset, plot_data
 
 
 
