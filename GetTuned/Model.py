@@ -754,6 +754,35 @@ class Cnn(Model, torch.nn.Module):
 
         return train_loader, valid_loader
 
+    def standard_epoch(self, train_loader, optimizer):
+        """
+        Make a standard training epoch
+
+        :param train_loader: A torch data_loader that contain the features and the labels for training.
+        :param optimizer: The torch optimizer that will used to train the model.
+        :return: The average training loss
+        """
+
+        sum_loss = 0
+        it = 0
+
+        for step, data in enumerate(train_loader, 0):
+            features, labels = data[0].to(self.device_), data[1].to(self.device_)
+
+            optimizer.zero_grad()
+
+            # training step
+            pred = self(features)
+            loss = self.criterion(pred, labels)
+            loss.backward()
+            optimizer.step()
+
+            # Save the loss
+            sum_loss += loss
+            it += 1
+
+        return sum_loss.item() / it
+
     def fit(self, X_train=None, t_train=None, dtset=None, verbose=False, gpu=True):
 
         """
@@ -770,6 +799,8 @@ class Cnn(Model, torch.nn.Module):
 
         # Indicator for early stopping
         best_accuracy = 0
+        best_loss = float("inf")
+        last_saved_loss = float("inf")
         best_epoch = -1
         num_epoch_no_change = 0
         lr_decay_step = 0
@@ -785,65 +816,111 @@ class Cnn(Model, torch.nn.Module):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=self.hparams["alpha"],
                                      eps=self.hparams["eps"], amsgrad=False)
-        begin = time.time()
 
-        for epoch in range(self.num_epoch):
-            sum_loss = 0.0
-            it = 0
+        with tqdm(total=self.num_epoch) as t:
+            for epoch in range(self.num_epoch):
+                """
+                sum_loss = 0.0
+                it = 0
 
-            # ------------------------------------------------------------------------------------------
-            #                                       TRAINING PART
-            # ------------------------------------------------------------------------------------------
-            for step, data in enumerate(train_loader, 0):
-                features, labels = data[0].to(self.device_), data[1].to(self.device_)
+                # ------------------------------------------------------------------------------------------
+                #                                       TRAINING PART
+                # ------------------------------------------------------------------------------------------
+                for step, data in enumerate(train_loader, 0):
+                    features, labels = data[0].to(self.device_), data[1].to(self.device_)
 
-                optimizer.zero_grad()
+                    optimizer.zero_grad()
 
-                # training step
-                pred = self(features)
-                loss = self.criterion(pred, labels)
-                loss.backward()
-                optimizer.step()
+                    # training step
+                    pred = self(features)
+                    loss = self.criterion(pred, labels)
+                    loss.backward()
+                    optimizer.step()
 
-                # Save the loss
-                sum_loss += loss
-                it += 1
+                    # Save the loss
+                    sum_loss += loss
+                    it += 1
 
-            current_accuracy = self.accuracy(dt_loader=valid_loader)
+                current_accuracy = self.accuracy(dt_loader=valid_loader)
 
-            if verbose:
-                end = time.time()
-                print("\n epoch: {:d}, Execution time: {:.2f}, average_loss: {:.4f}, validation_accuracy: {:.2f}%,"
-                      " best accuracy: {:.2f}%, best epoch {:d}:".format
-                      (epoch + 1, end - begin, sum_loss / it, current_accuracy*100, best_accuracy*100, best_epoch + 1))
-                begin = time.time()
+                if verbose:
+                    end = time.time()
+                    print(
+                        "\n epoch: {:d}, Execution time: {:.2f}, average_loss: {:.4f}, validation_accuracy: {:.2f}%,"
+                          " best accuracy: {:.2f}%, best epoch {:d}:".format
+                        (epoch + 1, end - begin, sum_loss / it, current_accuracy*100, best_accuracy*100, best_epoch + 1)
+                    )
+                    begin = time.time()
 
-            # ------------------------------------------------------------------------------------------
-            #                                   EARLY STOPPING PART
-            # ------------------------------------------------------------------------------------------
-            if current_accuracy - best_accuracy >= self.tol:
-                best_accuracy = current_accuracy
-                best_epoch = epoch
-                num_epoch_no_change = 0
+                # ------------------------------------------------------------------------------------------
+                #                                   EARLY STOPPING PART
+                # ------------------------------------------------------------------------------------------
+                if current_accuracy - best_accuracy >= self.tol:
+                    best_accuracy = current_accuracy
+                    best_epoch = epoch
+                    num_epoch_no_change = 0
 
-                # We make a save of the model at his best epoch
-                self.save_checkpoint(epoch, sum_loss / it, current_accuracy)
+                    # We make a save of the model at his best epoch
+                    self.save_checkpoint(epoch, sum_loss / it, current_accuracy)
 
-            elif num_epoch_no_change < self.num_stop_epoch - 1:
-                num_epoch_no_change += 1
+                elif num_epoch_no_change < self.num_stop_epoch - 1:
+                    num_epoch_no_change += 1
 
-            elif lr_decay_step < self.num_lr_decay:
-                lr_decay_step += 1
-                learning_rate /= self.hparams["lr_decay_rate"]
-                optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=self.hparams["alpha"],
-                                             eps=self.hparams["eps"], amsgrad=False)
-                num_epoch_no_change = 0
+                elif lr_decay_step < self.num_lr_decay:
+                    lr_decay_step += 1
+                    learning_rate /= self.hparams["lr_decay_rate"]
+                    optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=self.hparams["alpha"],
+                                                 eps=self.hparams["eps"], amsgrad=False)
+                    num_epoch_no_change = 0
 
-            else:
-                break
+                else:
+                    break
+                """
+                # ------------------------------------------------------------------------------------------
+                #                                       TRAINING PART
+                # ------------------------------------------------------------------------------------------
 
-        # We restore the weight of the model at his best epoch
-        self.restore()
+                training_loss = self.standard_epoch(train_loader, optimizer)
+                current_accuracy = self.accuracy(dt_loader=valid_loader)
+
+                # ------------------------------------------------------------------------------------------
+                #                                   EARLY STOPPING PART
+                # ------------------------------------------------------------------------------------------
+                if training_loss < last_saved_loss and current_accuracy >= best_accuracy:
+                    self.save_checkpoint(epoch, training_loss, current_accuracy)
+                    best_accuracy = current_accuracy
+                    last_saved_loss = training_loss
+
+                if self.tol < 1 - (training_loss / best_loss):
+                    best_loss = training_loss
+                    best_epoch = epoch
+                    num_epoch_no_change = 0
+
+                elif num_epoch_no_change < self.num_stop_epoch - 1:
+                    num_epoch_no_change += 1
+
+                # Learning rate decay step
+                elif lr_decay_step < self.num_lr_decay:
+
+                    # We update the learning rate and restart the optimizer
+                    learning_rate /= self.hparams["lr_decay_rate"]
+                    optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate,
+                                                 weight_decay=self.hparams["alpha"],
+                                                 eps=self.hparams["eps"], amsgrad=False)
+                    lr_decay_step += 1
+                    num_epoch_no_change = 0
+
+                else:
+                    break
+
+                if verbose:
+                    t.postfix = "avg loss: {:.4f}, validation: {:.2f}%, best accuracy: {:.2f}%, " \
+                                "best epoch: {}, learning rate: {:.8f}".format(
+                                 training_loss, current_accuracy * 100, best_accuracy * 100, best_epoch + 1,
+                                 learning_rate)
+                t.update()
+            # We restore the weight of the model at his best epoch
+            self.restore()
 
     def predict(self, X):
 
