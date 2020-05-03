@@ -8,7 +8,6 @@ setup(
     license='MIT',
     install_requires=[
         'astroid==2.3.3',
-        'certifi==2020.4.5.1',
         'cloudpickle==1.3.0',
         'ConfigSpace==0.4.12',
         'cycler==0.10.0',
@@ -51,5 +50,7 @@ setup(
         'wrapt==1.11.2',
     ],
     description='Collection of multiple hyperparameter optimization methods for classification tasks',
-
+    keywords='deeplearning machine learning neural network hyperparameter optimization svm mlp cnn gaussian processes tree of parzen \
+        random grid search hyperband bohb GPy GPyOpt hpbandster hyperopt automl automated',
 )
+
