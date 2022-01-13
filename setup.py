@@ -31,7 +31,7 @@ setup(
         'pandas==1.0.3',
         'paramz==0.9.5',
         'patsy==0.5.1',
-        'Pillow==7.0.0',
+        'Pillow==9.0.0',
         'pylint==2.4.4',
         'pyparsing==2.4.7',
         'Pyro4==4.79',
