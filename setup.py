@@ -26,7 +26,7 @@ setup(
         'mccabe==0.6.1',
         'netifaces==0.10.9',
         'networkx==2.4',
-        'numpy==1.18.1',
+        'numpy==1.22.0',
         'olefile==0.46',
         'pandas==1.0.3',
         'paramz==0.9.5',
