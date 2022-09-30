@@ -19,7 +19,7 @@ setup(
         'hpbandster==0.7.4',
         'hyperopt==0.2.4',
         'isort==4.3.21',
-        'joblib==0.14.1',
+        'joblib==1.2.0',
         'kiwisolver==1.2.0',
         'lazy-object-proxy==1.4.3',
         'matplotlib==3.2.1',
