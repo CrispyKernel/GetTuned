@@ -38,7 +38,7 @@ setup(
         'python-dateutil==2.8.1',
         'pytz==2019.3',
         'scikit-learn==0.22.2.post1',
-        'scipy==1.4.1',
+        'scipy==1.10.0',
         'serpent==1.30.2',
         'six==1.14.0',
         'sklearn==0.0',
