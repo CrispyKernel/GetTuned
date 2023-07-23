@@ -13,7 +13,7 @@ setup(
         'cycler==0.10.0',
         'Cython==0.29.17',
         'decorator==4.4.2',
-        'future==0.18.2',
+        'future==0.18.3',
         'GPy==1.9.9',
         'GPyOpt==1.2.6',
         'hpbandster==0.7.4',
