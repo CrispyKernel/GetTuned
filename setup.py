@@ -43,7 +43,7 @@ setup(
         'six==1.14.0',
         'sklearn==0.0',
         'statsmodels==0.11.1',
-        'torch==1.5.0',
+        'torch==1.13.1',
         'torchvision==0.6.0',
         'tqdm==4.45.0',
         'typed-ast==1.4.1',
